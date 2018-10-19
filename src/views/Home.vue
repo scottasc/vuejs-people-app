@@ -4,6 +4,10 @@
     
      <h1>People: {{people.length}}</h1>
 
+     <ul>
+       <li v-for="error in errors">{{error}}</li>
+     </ul>
+
       <div v-for="person in people">
           <h2 v-on:click="toggleBio(person)">{{person.name}}</h2>
 
@@ -31,7 +35,9 @@
     text-decoration: line-through;
   }
 
-
+  body {
+    background-color: lightblue;
+  }
 
 </style>
 
@@ -44,24 +50,37 @@ export default {
   data: function() {
     return {
       people: [],
-      newPerson: {name: "", bio: "", bioVisible: true}
+      newPerson: {name: "", bio: "", bioVisible: false},
+      errors: []
     };
   },
   created: function() {
     axios
     .get("http://localhost:3000/api/people")
-    .then(function(response) {
-      this.people = response.data; // this points to an undefined place because it's in an anonymous function and nested away from a direct reference to the Vue object.
-    }
-    .bind(this));
+    .then(response => {
+      this.people = response.data;
+    })
   },
   methods: {
     addPerson: function() {
-      if (this.newPerson.name && this.newPerson.bio) {
-        this.people.push(this.newPerson);
-        this.newPerson = {name: "", bio: "", completed: false};
-    }
-  },
+        this.errors = [];
+        var params = {
+                      name: this.newPerson.name,
+                      bio: this.newPerson.bio
+                     };
+
+        axios
+        .post("http://localhost:3000/api/people", params)
+
+        .then(response => {
+            this.people.push(response.data);
+            this.newPerson = {name: "", bio: "", completed: false};
+        })
+
+        .catch(error => {
+          this.errors = error.response.data.errors;
+        });
+    },
     toggleBio: function(inputPerson) {
       inputPerson.bioVisible = !inputPerson.bioVisible;
     },
